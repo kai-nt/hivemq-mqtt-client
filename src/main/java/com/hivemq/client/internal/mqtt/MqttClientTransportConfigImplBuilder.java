@@ -20,6 +20,7 @@ package com.hivemq.client.internal.mqtt;
 import com.hivemq.client.internal.util.Checks;
 import com.hivemq.client.mqtt.MqttClientSslConfig;
 import com.hivemq.client.mqtt.MqttClientTransportConfigBuilder;
+import com.hivemq.client.mqtt.MqttProxyConfig;
 import com.hivemq.client.mqtt.MqttWebSocketConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,7 @@ public abstract class MqttClientTransportConfigImplBuilder<B extends MqttClientT
     private int serverPort = -1;
     private @Nullable MqttClientSslConfigImpl sslConfig;
     private @Nullable MqttWebSocketConfigImpl webSocketConfig;
+    private @Nullable MqttProxyConfigImpl proxyConfig;
 
     MqttClientTransportConfigImplBuilder() {}
 
@@ -53,12 +55,14 @@ public abstract class MqttClientTransportConfigImplBuilder<B extends MqttClientT
         serverPort = builder.serverPort;
         sslConfig = builder.sslConfig;
         webSocketConfig = builder.webSocketConfig;
+        proxyConfig = builder.proxyConfig;
     }
 
     void set(final @NotNull MqttClientTransportConfigImpl transportConfig) {
         serverAddress = transportConfig.getServerAddress();
         sslConfig = transportConfig.getRawSslConfig();
         webSocketConfig = transportConfig.getRawWebSocketConfig();
+        proxyConfig = transportConfig.getRawProxyConfig();
     }
 
     abstract @NotNull B self();
@@ -129,6 +133,15 @@ public abstract class MqttClientTransportConfigImplBuilder<B extends MqttClientT
         return new MqttWebSocketConfigImplBuilder.Nested<>(webSocketConfig, this::webSocketConfig);
     }
 
+    public @NotNull B proxyConfig(final @Nullable MqttProxyConfig proxyConfig) {
+        this.proxyConfig = Checks.notImplementedOrNull(proxyConfig, MqttProxyConfigImpl.class, "Proxy config");
+        return self();
+    }
+
+    public @NotNull MqttProxyConfigImplBuilder.Nested<B> proxyConfig() {
+        return new MqttProxyConfigImplBuilder.Nested<>(proxyConfig, this::proxyConfig);
+    }
+
     private @NotNull InetSocketAddress getServerAddress() {
         if (serverAddress != null) {
             return serverAddress;
@@ -156,7 +169,7 @@ public abstract class MqttClientTransportConfigImplBuilder<B extends MqttClientT
     }
 
     @NotNull MqttClientTransportConfigImpl buildTransportConfig() {
-        return new MqttClientTransportConfigImpl(getServerAddress(), sslConfig, webSocketConfig);
+        return new MqttClientTransportConfigImpl(getServerAddress(), sslConfig, webSocketConfig, proxyConfig);
     }
 
     public static class Default extends MqttClientTransportConfigImplBuilder<Default>
@@ -183,10 +196,6 @@ public abstract class MqttClientTransportConfigImplBuilder<B extends MqttClientT
             implements MqttClientTransportConfigBuilder.Nested<P> {
 
         private final @NotNull Function<? super MqttClientTransportConfigImpl, P> parentConsumer;
-
-        public Nested(final @NotNull Function<? super MqttClientTransportConfigImpl, P> parentConsumer) {
-            this.parentConsumer = parentConsumer;
-        }
 
         public Nested(
                 final @NotNull MqttClientTransportConfigImpl transportConfig,

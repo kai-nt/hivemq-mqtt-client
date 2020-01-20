@@ -58,6 +58,12 @@ public interface MqttClientTransportConfig {
     @NotNull Optional<MqttWebSocketConfig> getWebSocketConfig();
 
     /**
+     * @return the optional proxy configuration.
+     * @since 1.2
+     */
+    @NotNull Optional<MqttProxyConfig> getProxyConfig();
+
+    /**
      * Creates a builder for extending this transport configuration.
      *
      * @return the created builder.
